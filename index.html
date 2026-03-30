@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>鎌倉彫金工房 広告レポート</title>
+  <link rel="stylesheet" href="css/style.css">
+  <!-- Papa Parse -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="header">
+    <div class="header-left">
+      <h1>鎌倉彫金工房 広告レポート<span id="report-period"></span></h1>
+    </div>
+    <div class="header-controls">
+      <select id="month-select" class="month-select"></select>
+      <span class="control-label">比較:</span>
+      <select id="compare-select" class="month-select">
+        <option value="prev_year" selected>前年</option>
+        <option value="prev_month">前月</option>
+        <option value="avg_3m">直近3ヶ月平均</option>
+        <option value="avg_6m">直近6ヶ月平均</option>
+      </select>
+    </div>
+  </header>
+
+  <!-- Tab Navigation -->
+  <nav class="tab-nav">
+    <button class="tab-btn active" data-tab="summary">サマリー</button>
+    <button class="tab-btn" data-tab="google-ads">Google広告</button>
+    <button class="tab-btn" data-tab="facebook-ads">Facebook広告</button>
+    <button class="tab-btn" data-tab="analytics">GAトラフィック</button>
+    <button class="tab-btn" data-tab="insights">インサイト</button>
+  </nav>
+
+  <!-- Tab Contents -->
+  <main>
+    <div id="tab-summary" class="tab-content active">
+      <div class="loading"><div class="spinner"></div>データを読み込み中...</div>
+    </div>
+    <div id="tab-google-ads" class="tab-content">
+      <div class="loading"><div class="spinner"></div>データを読み込み中...</div>
+    </div>
+    <div id="tab-facebook-ads" class="tab-content">
+      <div class="loading"><div class="spinner"></div>データを読み込み中...</div>
+    </div>
+    <div id="tab-analytics" class="tab-content">
+      <div class="loading"><div class="spinner"></div>データを読み込み中...</div>
+    </div>
+    <div id="tab-insights" class="tab-content">
+      <div class="loading"><div class="spinner"></div>データを読み込み中...</div>
+    </div>
+  </main>
+
+  <!-- Scripts (order matters) -->
+  <script src="js/googleAdsMaster.js?v=14"></script>
+  <script src="js/embeddedData.js?v=14"></script>
+  <script src="js/changeHistoryData.js?v=14"></script>
+  <script src="js/searchConsoleData.js?v=14"></script>
+  <script src="js/comparison.js?v=15"></script>
+  <script src="js/storeMapping.js?v=15"></script>
+  <script src="js/utils/formatters.js?v=14"></script>
+  <script src="js/utils/yoyCalc.js?v=14"></script>
+  <script src="js/utils/charts.js?v=14"></script>
+  <script src="js/dataLoader.js?v=14"></script>
+  <script src="js/changeHistory.js?v=14"></script>
+  <script src="js/sections/summary.js?v=14"></script>
+  <script src="js/sections/googleAds.js?v=14"></script>
+  <script src="js/sections/facebookAds.js?v=14"></script>
+  <script src="js/sections/analytics.js?v=14"></script>
+  <script src="js/sections/insights.js?v=14"></script>
+  <script src="js/app.js?v=14"></script>
+
+</body>
+</html>
