@@ -104,6 +104,9 @@ const GoogleAdsSection = {
     // 広告 vs オーガニック重複分析
     html += this.renderAdVsOrganic(storeData);
 
+    // オークション分析
+    html += this.renderAuctionInsights(store);
+
     // 変更履歴と影響分析
     if (typeof ChangeHistoryAnalyzer !== 'undefined') {
       html += ChangeHistoryAnalyzer.renderChangeSection(DataLoader.currentMonth, store, storeData);
@@ -111,6 +114,7 @@ const GoogleAdsSection = {
 
     container.innerHTML = html;
     this.renderTop10Chart(storeData);
+    this.renderAuctionChart(store);
   },
 
   renderBrandAnalysis(storeData) {
@@ -336,6 +340,159 @@ const GoogleAdsSection = {
       ${renderTable(improved, 'CVR改善キーワード Top5', 'positive')}
       ${renderTable(declined, 'CVR悪化キーワード Top5', 'negative')}
     </div>`;
+  },
+
+  renderAuctionInsights(store) {
+    if (typeof AUCTION_INSIGHTS === 'undefined') return '';
+    const storeKey = store === '全店' ? '鎌倉本店' : store;
+    const storeData = AUCTION_INSIGHTS[storeKey];
+    if (!storeData) return '';
+
+    const months = Object.keys(storeData).sort();
+    const recent12 = months.slice(-12);
+    if (recent12.length === 0) return '';
+
+    const currentMonth = DataLoader.currentMonth.replace('-', '_');
+    const current = storeData[currentMonth];
+
+    // KPI cards for current month
+    let kpiHtml = '';
+    if (current) {
+      const prevYearMonth = currentMonth.replace(/^(\d{4})/, (m, y) => String(Number(y) - 1));
+      const prev = storeData[prevYearMonth];
+
+      const metrics = [
+        { label: 'インプレッションシェア', val: current.is, prev: prev?.is, suffix: '%' },
+        { label: '損失率（ランク）', val: current.lossRank, prev: prev?.lossRank, suffix: '%', isInverse: true },
+        { label: '損失率（予算）', val: current.lossBudget, prev: prev?.lossBudget, suffix: '%', isInverse: true },
+        { label: '上部IS損失（ランク）', val: current.topLossRank, prev: prev?.topLossRank, suffix: '%', isInverse: true },
+      ];
+
+      kpiHtml = '<div class="kpi-grid">';
+      metrics.forEach(m => {
+        if (m.val == null) return;
+        const valStr = m.val.toFixed(1) + m.suffix;
+        let changeHtml = '';
+        if (m.prev != null) {
+          const diff = m.val - m.prev;
+          const isGood = m.isInverse ? diff < 0 : diff > 0;
+          const cls = Math.abs(diff) < 0.5 ? 'neutral' : (isGood ? 'positive' : 'negative');
+          const arrow = isGood ? '&#9650;' : '&#9660;';
+          changeHtml = `<div class="change ${cls}">${arrow} ${diff > 0 ? '+' : ''}${diff.toFixed(1)}pt</div>`;
+        }
+        kpiHtml += `<div class="kpi-card">
+          <div class="label">${m.label}</div>
+          <div class="value">${valStr}</div>
+          <div class="previous">前年: ${m.prev != null ? m.prev.toFixed(1) + m.suffix : 'N/A'}</div>
+          ${changeHtml}
+        </div>`;
+      });
+      kpiHtml += '</div>';
+    }
+
+    // Campaign breakdown table for current month
+    let campTable = '';
+    if (current && current.campaigns) {
+      const camps = Object.entries(current.campaigns).sort((a, b) => b[1].cv - a[1].cv);
+      if (camps.length > 0) {
+        campTable = `<div class="table-scroll"><table class="data-table">
+          <thead><tr><th>キャンペーン</th><th class="num">IS</th><th class="num">損失(ランク)</th><th class="num">損失(予算)</th><th class="num">CV</th></tr></thead><tbody>`;
+        camps.forEach(([name, d]) => {
+          const isStr = d.is != null ? d.is.toFixed(1) + '%' : '-';
+          const lrStr = d.lossRank != null ? d.lossRank.toFixed(1) + '%' : '-';
+          const lbStr = d.lossBudget != null ? d.lossBudget.toFixed(1) + '%' : '-';
+          const lrClass = d.lossRank > 85 ? 'negative' : (d.lossRank > 70 ? '' : 'positive');
+          campTable += `<tr><td>${name}</td><td class="num">${isStr}</td><td class="num ${lrClass}">${lrStr}</td><td class="num">${lbStr}</td><td class="num">${d.cv.toFixed(1)}</td></tr>`;
+        });
+        campTable += '</tbody></table></div>';
+      }
+    }
+
+    return `
+      <div class="section-card">
+        <h3>オークション分析（検索キャンペーン）${store === '全店' ? ' — 鎌倉本店' : ''}</h3>
+        <p style="color:var(--text-secondary);margin-bottom:12px;">IS損失率（ランク）が高い = 広告ランクが低く表示機会を逃している。入札額・品質スコア・広告表示オプションの改善が必要。</p>
+        ${kpiHtml}
+        <div class="chart-row">
+          <div class="section-card" style="box-shadow:none;padding:0;">
+            <h4 style="margin-bottom:8px;">月次推移（直近12ヶ月）</h4>
+            <div class="chart-container"><canvas id="chart-auction-trend"></canvas></div>
+          </div>
+          <div class="section-card" style="box-shadow:none;padding:0;">
+            <h4 style="margin-bottom:8px;">キャンペーン別（当月）</h4>
+            ${campTable || '<p>データなし</p>'}
+          </div>
+        </div>
+      </div>`;
+  },
+
+  renderAuctionChart(store) {
+    if (typeof AUCTION_INSIGHTS === 'undefined') return;
+    const canvas = document.getElementById('chart-auction-trend');
+    if (!canvas) return;
+
+    const storeKey = store === '全店' ? '鎌倉本店' : store;
+    const storeData = AUCTION_INSIGHTS[storeKey];
+    if (!storeData) return;
+
+    const months = Object.keys(storeData).sort().slice(-12);
+    const labels = months.map(m => m.replace('_', '/'));
+
+    const isData = months.map(m => storeData[m]?.is ?? null);
+    const lossRankData = months.map(m => storeData[m]?.lossRank ?? null);
+    const lossBudgetData = months.map(m => storeData[m]?.lossBudget ?? null);
+
+    new Chart(canvas, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [
+          {
+            label: 'インプレッションシェア',
+            data: isData,
+            borderColor: '#2563eb',
+            backgroundColor: 'rgba(37,99,235,0.1)',
+            fill: true,
+            tension: 0.3,
+            yAxisID: 'y'
+          },
+          {
+            label: '損失率（ランク）',
+            data: lossRankData,
+            borderColor: '#ef4444',
+            borderDash: [5, 5],
+            tension: 0.3,
+            yAxisID: 'y'
+          },
+          {
+            label: '損失率（予算）',
+            data: lossBudgetData,
+            borderColor: '#f59e0b',
+            borderDash: [3, 3],
+            tension: 0.3,
+            yAxisID: 'y'
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'bottom' },
+          tooltip: {
+            callbacks: {
+              label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y?.toFixed(1)}%`
+            }
+          }
+        },
+        scales: {
+          y: {
+            min: 0, max: 100,
+            ticks: { callback: v => v + '%' }
+          }
+        }
+      }
+    });
   },
 
   renderAdVsOrganic(storeData) {
