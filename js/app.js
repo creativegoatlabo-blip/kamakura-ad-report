@@ -2,6 +2,7 @@
 
 const App = {
   currentTab: 'summary',
+  months: [],
 
   async init() {
     // 月リスト読込
@@ -48,6 +49,7 @@ const App = {
     select.innerHTML = '';
     // 新しい月が先頭に来るように降順
     const sortedMonths = [...months].sort().reverse();
+    this.months = sortedMonths;
     sortedMonths.forEach(m => {
       const [year, month] = m.split('_');
       const opt = document.createElement('option');
@@ -103,6 +105,7 @@ const App = {
 
       // 全タブをレンダリング
       SummarySection.render(data);
+      YearlySection.render(this.months);
       GoogleAdsSection.render(data);
       FacebookAdsSection.render(data);
       AnalyticsSection.render(data);

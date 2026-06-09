@@ -220,6 +220,47 @@ body {
   gap: 20px;
 }
 
+/* Yearly dashboard */
+.yearly-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.yearly-title h2 {
+  font-size: 20px;
+  font-weight: 650;
+}
+
+.yearly-subtitle {
+  color: var(--text-secondary);
+  font-size: 13px;
+  margin-top: 4px;
+}
+
+.metric-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.metric-chip {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  padding: 5px 10px;
+  white-space: nowrap;
+}
+
+.yearly-kpi-grid {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
 /* Tables */
 .data-table {
   width: 100%;
@@ -460,6 +501,11 @@ body {
 
   .kpi-grid {
     grid-template-columns: repeat(2, 1fr);
+  }
+
+  .yearly-toolbar {
+    align-items: flex-start;
+    flex-direction: column;
   }
 
   .tab-btn {
