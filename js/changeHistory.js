@@ -9,7 +9,8 @@ const ChangeHistoryAnalyzer = {
     kw_delete: 'KW削除',
     status_ag: '広告グループ変更',
     status_camp: 'キャンペーン変更',
-    neg_kw: '除外KW追加'
+    neg_kw: '除外KW追加',
+    api_change: 'API変更'
   },
 
   TYPE_COLORS: {
@@ -20,7 +21,8 @@ const ChangeHistoryAnalyzer = {
     kw_add: 'change-positive',
     status_ag: 'change-status',
     status_camp: 'change-status',
-    neg_kw: 'change-bid'
+    neg_kw: 'change-bid',
+    api_change: 'change-status'
   },
 
   getChangesForMonth(month, store) {

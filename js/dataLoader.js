@@ -217,14 +217,15 @@ const DataLoader = {
       const result = Papa.parse(lines.join('\n'), { header: true, skipEmptyLines: true, dynamicTyping: false });
       return (result.data || []).map(r => {
         const keys = Object.keys(r);
+        const itemName = r['アイテム名'] || r[keys[0]] || '';
         return {
-          itemName: r[keys[0]] || '',
-          source: r[keys[1]] || '',
-          itemsViewed: parseFloat(r[keys[2]]) || 0,
-          itemsAddedToCart: parseFloat(r[keys[3]]) || 0,
-          purchases: parseFloat(r[keys[4]]) || 0,
-          revenue: parseFloat(r[keys[5]]) || 0,
-          store: storeFromItemName(r[keys[0]])
+          itemName,
+          source: r['セッション「媒体分析」'] || '全体',
+          itemsViewed: parseFloat(r['閲覧されたアイテム数']) || 0,
+          itemsAddedToCart: parseFloat(r['カートに追加されたアイテム数']) || 0,
+          purchases: parseFloat(r['アイテムの購入数']) || 0,
+          revenue: parseFloat(r['アイテムの収益']) || 0,
+          store: storeFromItemName(itemName)
         };
       });
     };
