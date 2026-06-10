@@ -11,7 +11,11 @@ const YearlySection = {
     { key: 'googleCvr', label: 'Google広告CVR', format: value => formatPercent(value, 2) },
     { key: 'googleClicks', label: 'Google広告クリック数', format: value => formatNumber(value) },
     { key: 'googleImpressions', label: 'Google広告表示回数', format: value => formatNumber(value) },
+    { key: 'facebookImpressions', label: 'Facebook表示回数', format: value => formatNumber(value) },
+    { key: 'facebookClicks', label: 'Facebook推定クリック数', format: value => formatNumber(value) },
+    { key: 'facebookCv', label: 'Facebook CV数', format: value => formatNumber(value) },
     { key: 'sessions', label: 'GAセッション数', format: value => formatNumber(value) },
+    { key: 'revenue', label: 'GA合計収益', format: value => formatCurrency(value) },
     { key: 'ecommercePurchases', label: 'GA EC購入数', format: value => formatNumber(value) }
   ],
 
@@ -145,6 +149,8 @@ const YearlySection = {
       facebookSpend: facebook.spend,
       facebookCv: facebook.cv,
       facebookCpa: facebook.cv > 0 ? facebook.spend / facebook.cv : 0,
+      facebookImpressions: facebook.impressions,
+      facebookClicks: facebook.clicks,
       sessions: ga.sessions,
       keyEvents: ga.keyEvents,
       revenue: ga.revenue,
@@ -192,9 +198,9 @@ const YearlySection = {
   },
 
   getFacebookMetrics(month) {
-    const result = { spend: 0, cv: 0, stores: {} };
+    const result = { spend: 0, cv: 0, impressions: 0, clicks: 0, stores: {} };
     STORE_LIST.forEach(store => {
-      result.stores[store] = { spend: 0, cv: 0 };
+      result.stores[store] = { spend: 0, cv: 0, impressions: 0, clicks: 0 };
     });
 
     const rows = this.parseEmbeddedCSV(month, ['faceboo-広告レポート', 'facebook-広告レポート'], '前年');
@@ -202,10 +208,17 @@ const YearlySection = {
     const byStore = DataLoader.getFBStoreSummary(parsed);
 
     STORE_LIST.forEach(store => {
-      const metrics = byStore[store] || { spend: 0, conversions: 0 };
-      result.stores[store] = { spend: metrics.spend || 0, cv: metrics.conversions || 0 };
+      const metrics = byStore[store] || { spend: 0, conversions: 0, impressions: 0, clicks: 0 };
+      result.stores[store] = {
+        spend: metrics.spend || 0,
+        cv: metrics.conversions || 0,
+        impressions: metrics.impressions || 0,
+        clicks: metrics.clicks || 0
+      };
       result.spend += metrics.spend || 0;
       result.cv += metrics.conversions || 0;
+      result.impressions += metrics.impressions || 0;
+      result.clicks += metrics.clicks || 0;
     });
 
     return result;
@@ -268,6 +281,8 @@ const YearlySection = {
       googleCv: 0,
       facebookSpend: 0,
       facebookCv: 0,
+      facebookImpressions: 0,
+      facebookClicks: 0,
       googleClicks: 0,
       googleImpressions: 0,
       sessions: 0,
@@ -302,7 +317,9 @@ const YearlySection = {
       this.buildYearKpi('年間CV数', current.cv, previous.cv, { format: value => formatNumber(value, 1) }),
       this.buildYearKpi('年間CPA', current.cpa, previous.cpa, { format: formatCurrency, inverse: true }),
       this.buildYearKpi('Google広告CVR', current.googleCvr, previous.googleCvr, { format: value => formatPercent(value, 2) }),
+      this.buildYearKpi('Facebook CV数', current.facebookCv, previous.facebookCv, { format: formatNumber }),
       this.buildYearKpi('GAセッション数', current.sessions, previous.sessions, { format: formatNumber }),
+      this.buildYearKpi('GA合計収益', current.revenue, previous.revenue, { format: formatCurrency }),
       this.buildYearKpi('GA EC購入数', current.ecommercePurchases, previous.ecommercePurchases, { format: formatNumber })
     ];
 
@@ -358,6 +375,16 @@ const YearlySection = {
           <div class="chart-container"><canvas id="chart-yearly-site"></canvas></div>
         </div>
       </div>
+      <div class="chart-row">
+        <div class="section-card">
+          <h3>月次推移: Facebook表示回数 / 推定クリック数</h3>
+          <div class="chart-container"><canvas id="chart-yearly-facebook-volume"></canvas></div>
+        </div>
+        <div class="section-card">
+          <h3>月次推移: Facebook CV数 / GA合計収益</h3>
+          <div class="chart-container"><canvas id="chart-yearly-facebook-cv-ga-revenue"></canvas></div>
+        </div>
+      </div>
     `;
   },
 
@@ -383,6 +410,16 @@ const YearlySection = {
       { label: 'GAセッション数', data: months.map(month => month.sessions), axis: 'y', color: CHART_COLORS.secondary, format: formatNumber },
       { label: 'GA EC購入数', data: months.map(month => month.ecommercePurchases), axis: 'y1', color: CHART_COLORS.accent, format: formatNumber }
     ], { yTitle: 'セッション数', y1Title: 'EC購入数' });
+
+    this.createDualAxisLineChart('chart-yearly-facebook-volume', labels, [
+      { label: 'Facebook推定クリック数', data: months.map(month => month.facebookClicks), axis: 'y', color: CHART_COLORS.primary, format: formatNumber },
+      { label: 'Facebook表示回数', data: months.map(month => month.facebookImpressions), axis: 'y1', color: CHART_COLORS.neutral, format: formatNumber }
+    ], { yTitle: '推定クリック数', y1Title: '表示回数' });
+
+    this.createDualAxisLineChart('chart-yearly-facebook-cv-ga-revenue', labels, [
+      { label: 'Facebook CV数', data: months.map(month => month.facebookCv), axis: 'y', color: CHART_COLORS.secondary, format: formatNumber },
+      { label: 'GA合計収益', data: months.map(month => month.revenue), axis: 'y1', color: CHART_COLORS.accent, format: formatCurrency }
+    ], { yTitle: 'Facebook CV数', y1Title: 'GA合計収益' });
   },
 
   createDualAxisLineChart(canvasId, labels, series, titles) {
@@ -465,7 +502,11 @@ const YearlySection = {
                 <th class="num">Google広告CVR</th>
                 <th class="num">Google広告クリック数</th>
                 <th class="num">Google広告表示回数</th>
+                <th class="num">Facebook表示回数</th>
+                <th class="num">Facebook推定クリック数</th>
+                <th class="num">Facebook CV数</th>
                 <th class="num">GAセッション数</th>
+                <th class="num">GA合計収益</th>
                 <th class="num">GA EC購入数</th>
                 <th class="num">Google広告費</th>
                 <th class="num">Facebook広告費</th>
@@ -481,7 +522,11 @@ const YearlySection = {
                   <td class="num">${formatPercent(month.googleCvr, 2)}</td>
                   <td class="num">${formatNumber(month.googleClicks)}</td>
                   <td class="num">${formatNumber(month.googleImpressions)}</td>
+                  <td class="num">${formatNumber(month.facebookImpressions)}</td>
+                  <td class="num">${formatNumber(month.facebookClicks)}</td>
+                  <td class="num">${formatNumber(month.facebookCv)}</td>
                   <td class="num">${formatNumber(month.sessions)}</td>
+                  <td class="num">${formatCurrency(month.revenue)}</td>
                   <td class="num">${formatNumber(month.ecommercePurchases)}</td>
                   <td class="num">${formatCurrency(month.googleSpend)}</td>
                   <td class="num">${formatCurrency(month.facebookSpend)}</td>

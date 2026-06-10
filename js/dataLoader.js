@@ -152,6 +152,9 @@ const DataLoader = {
         const bookingTotal = parseFloat(r[bookingKeys[2]]) || 0;
         // 合計がある場合はそれを使う、なければクリック+ビュー
         const conversions = bookingTotal || (bookingClick + bookingView);
+        const impressions = parseFloat(r['インプレッション']) || 0;
+        const ctr = parseFloat(r['CTR(すべて)']) || 0;
+        const clicks = parseFloat(r['クリック数']) || parseFloat(r['リンクのクリック']) || (impressions * ctr / 100);
 
         return {
           store: normalizeStoreName(r['アカウント名']),
@@ -161,10 +164,11 @@ const DataLoader = {
           age: r['年齢'] || '',
           gender: r['性別'] || '',
           reach: parseFloat(r['リーチ']) || 0,
-          impressions: parseFloat(r['インプレッション']) || 0,
+          impressions,
           frequency: parseFloat(r['フリークエンシー']) || 0,
           spend: parseFloat(r['消化金額 (JPY)']) || 0,
-          ctr: parseFloat(r['CTR(すべて)']) || 0,
+          ctr,
+          clicks,
           conversions,
           bookingClick,
           bookingView
@@ -467,6 +471,7 @@ const DataLoader = {
         summary[s].reach += r.reach;
         summary[s].impressions += r.impressions;
         summary[s].conversions += r.conversions;
+        summary[s].clicks += r.clicks;
       }
     });
 
