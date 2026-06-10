@@ -86,6 +86,24 @@ body {
   border-color: var(--accent);
 }
 
+.yearly-entry-btn {
+  background: rgba(79,195,247,0.12);
+  border: 1px solid rgba(79,195,247,0.45);
+  border-radius: 8px;
+  color: var(--accent);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 650;
+  padding: 8px 14px;
+  white-space: nowrap;
+}
+
+.yearly-entry-btn:hover,
+.yearly-entry-btn.active {
+  background: var(--accent);
+  color: #0d2033;
+}
+
 /* Tab Navigation */
 .tab-nav {
   display: flex;
@@ -506,6 +524,10 @@ body {
   .yearly-toolbar {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .header-controls {
+    flex-wrap: wrap;
   }
 
   .tab-btn {

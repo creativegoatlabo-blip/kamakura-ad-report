@@ -19,14 +19,14 @@ const YearlySection = {
     const container = document.getElementById('tab-yearly');
     if (!container) return;
 
-    const years = this.getAvailableYears(months);
-    if (years.length === 0) {
+    const fiscalYears = this.getAvailableYears(months);
+    if (fiscalYears.length === 0) {
       container.innerHTML = '<div class="loading">年次データがありません。</div>';
       return;
     }
 
-    if (!this.selectedYear || !years.includes(this.selectedYear)) {
-      this.selectedYear = years[0];
+    if (!this.selectedYear || !fiscalYears.includes(this.selectedYear)) {
+      this.selectedYear = fiscalYears[0];
     }
 
     const current = this.buildYearData(this.selectedYear);
@@ -35,11 +35,11 @@ const YearlySection = {
     const html = `
       <div class="yearly-toolbar">
         <div class="yearly-title">
-          <h2>${this.selectedYear}年 年次ダッシュボード</h2>
-          <div class="yearly-subtitle">${current.months.length}か月分 / 比較: ${previous.year}年同月</div>
+          <h2>${this.selectedYear}年度 年次ダッシュボード</h2>
+          <div class="yearly-subtitle">${this.formatFiscalRange(this.selectedYear)} / ${current.months.length}か月分 / 比較: ${previous.year}年度同月</div>
         </div>
         <select id="year-select" class="month-select">
-          ${years.map(year => `<option value="${year}" ${year === this.selectedYear ? 'selected' : ''}>${year}年</option>`).join('')}
+          ${fiscalYears.map(year => `<option value="${year}" ${year === this.selectedYear ? 'selected' : ''}>${year}年度</option>`).join('')}
         </select>
       </div>
       ${this.renderMetricChips()}
@@ -67,8 +67,8 @@ const YearlySection = {
     }
 
     return [...new Set([...monthSet]
-      .map(month => String(month).split('_')[0])
-      .filter(year => /^\d{4}$/.test(year)))]
+      .map(month => this.getFiscalYear(month))
+      .filter(year => /^\d{4}$/.test(String(year))))]
       .sort()
       .reverse();
   },
@@ -76,17 +76,15 @@ const YearlySection = {
   getMonthsForYear(year) {
     const monthSet = new Set();
     if (typeof GOOGLE_ADS_MASTER !== 'undefined') {
-      Object.keys(GOOGLE_ADS_MASTER).forEach(month => {
-        if (month.startsWith(`${year}_`)) monthSet.add(month);
-      });
+      Object.keys(GOOGLE_ADS_MASTER).forEach(month => monthSet.add(month));
     }
     if (typeof EMBEDDED_DATA !== 'undefined') {
-      Object.keys(EMBEDDED_DATA).forEach(month => {
-        if (month.startsWith(`${year}_`)) monthSet.add(month);
-      });
+      Object.keys(EMBEDDED_DATA).forEach(month => monthSet.add(month));
     }
 
-    return [...monthSet].sort();
+    return [...monthSet]
+      .filter(month => this.getFiscalYear(month) === String(year))
+      .sort((a, b) => this.getFiscalMonthIndex(a) - this.getFiscalMonthIndex(b));
   },
 
   buildYearData(year, monthNumbers = null) {
@@ -105,6 +103,22 @@ const YearlySection = {
     const previousYear = String(Number(current.year) - 1);
     const monthNumbers = current.months.map(month => month.month.split('_')[1]);
     return this.buildYearData(previousYear, monthNumbers);
+  },
+
+  getFiscalYear(month) {
+    const [year, monthNumber] = String(month).split('_').map(Number);
+    if (!year || !monthNumber) return '';
+    return String(monthNumber >= 5 ? year : year - 1);
+  },
+
+  getFiscalMonthIndex(month) {
+    const [, monthNumber] = String(month).split('_').map(Number);
+    return monthNumber >= 5 ? monthNumber - 5 : monthNumber + 7;
+  },
+
+  formatFiscalRange(year) {
+    const startYear = Number(year);
+    return `${startYear}年5月-${startYear + 1}年4月`;
   },
 
   getMonthMetrics(month) {
@@ -481,7 +495,7 @@ const YearlySection = {
   },
 
   formatMonthLabel(month) {
-    const [, monthNumber] = month.split('_');
-    return `${Number(monthNumber)}月`;
+    const [year, monthNumber] = month.split('_');
+    return `${year}年${Number(monthNumber)}月`;
   }
 };

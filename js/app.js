@@ -12,6 +12,7 @@ const App = {
     document.querySelectorAll('.tab-btn').forEach(btn => {
       btn.addEventListener('click', () => this.switchTab(btn.dataset.tab));
     });
+    document.getElementById('yearly-entry-btn')?.addEventListener('click', () => this.switchTab('yearly'));
 
     // 比較セレクタイベント
     document.getElementById('compare-select').addEventListener('change', (e) => {
@@ -127,6 +128,11 @@ const App = {
     document.querySelectorAll('.tab-btn').forEach(btn => {
       btn.classList.toggle('active', btn.dataset.tab === tabId);
     });
+
+    const yearlyEntry = document.getElementById('yearly-entry-btn');
+    if (yearlyEntry) {
+      yearlyEntry.classList.toggle('active', tabId === 'yearly');
+    }
 
     document.querySelectorAll('.tab-content').forEach(el => {
       el.classList.toggle('active', el.id === 'tab-' + tabId);
